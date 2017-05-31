@@ -8,7 +8,7 @@ This ROS package configures and communicates with the Tritech Profiling sonar.
 You must clone this repository as `tritech_profiler` into your catkin workspace:
 
 ```bash
-git clone https://github.com/olayasturias/catkin_ws/tree/master/src/tritech_profiler
+git clone https://github.com/olayasturias/catkin_ws/tritech_profiler
 ```
 
 ## Dependencies
