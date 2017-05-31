@@ -339,7 +339,7 @@ class TritechProfiler(object):
         rospy.loginfo("RANGE:                %s m", self.range)
         rospy.loginfo("INVERTED:             %s", self.inverted)
         rospy.loginfo("ADC THRESHOLD:        %s ", self.adc_threshold)
-        rospy.loginfo("FILT GAIN:            %s%%", self.filt_gain)
+        rospy.loginfo("LOCKOUT:              %s%%", self.lockout)
         rospy.loginfo("ADAPTIVE GAIN CONTROL %s", self.agc)
         rospy.loginfo("GAIN:                 %s%%", self.gain * 100)
         rospy.loginfo("MOTOR TIME:           %s us", self.mo_time)
@@ -627,6 +627,7 @@ class TritechProfiler(object):
             # ADC analog threshold (1/255 units)
             adc_threshold = data.read(8).uintle
             filt_gain = data.read(8).uintle
+            rospy.logdebug("filt Gain is %f", filt_gain)
 
             # Left/right angles limits are in 1/16th of a gradian.
             self.left_limit = to_radians(data.read(16).uintle)
@@ -636,12 +637,6 @@ class TritechProfiler(object):
                 self.left_limit, self.right_limit
             )
 
-            # Heading offset is ignored.
-            #heading_offset = to_radians(data.read(16).uint)
-            #rospy.logdebug("Heading offset is %f", heading_offset)
-
-            # ADInterval defines the sampling interval of each bin and is in
-            # units of 640 nanoseconds.
 
             # Step angle size.
             self.step = to_radians(data.read(8).uint)
@@ -649,10 +644,6 @@ class TritechProfiler(object):
 
             ScanTime = data.read(16).uintle
             rospy.logdebug("Scan Time is %d", ScanTime)
-
-            # Heading is in units of 1/16th of a gradian.
-            #self.heading = to_radians(data.read(16).uintle)
-            #rospy.loginfo("Heading is now %f", self.heading)
 
             # Dbytes is the number of bytes with data to follow.
             dbytes = data.read(16).uintle
