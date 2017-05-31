@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package>
+  <name>tritech_profiler</name>
+  <version>1.0.0</version>
+  <description>
+    This package provides ROS actions to control and communicate with the
+    Tritech Profiling sonar.
+  </description>
+
+  <maintainer email="oalvarez@ing.uc3m.es">Olaya Alvarez</maintainer>
+  <license>GPLv2</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>rospy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
+
+  <run_depend>rospy</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
+
+  <!-- Python dependencies -->
+  <run_depend>python-bitstring-pip</run_depend>
+</package>
