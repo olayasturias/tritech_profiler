@@ -36,3 +36,6 @@ int16 nbins
 
 # Motor step size in radians.
 float64 step
+
+# Time in microseconds at which Receiver starts sampling after it has transmitted
+int16 lockout

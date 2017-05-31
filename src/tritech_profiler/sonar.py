@@ -248,7 +248,7 @@ class TritechProfiler(object):
 
     def set(self, agc=None, prf_alt=None, scanright=None, step=None,
             filt_gain=None, adc_threshold=None, left_limit=None, right_limit=None,
-            mo_time=None, range=None, gain=None, speed=None,
+            mo_time=None, range=None, gain=None, speed=None, lockout = None,
             inverted=None, force=False):
         print 'set'
         """Sends Sonar head command with new properties if needed.
@@ -284,7 +284,7 @@ class TritechProfiler(object):
             agc=agc, prf_alt=prf_alt, scanright=scanright,
             step=step, filt_gain=filt_gain, adc_threshold=adc_threshold, left_limit=left_limit,
             right_limit=right_limit, mo_time=mo_time, range=range,
-            gain=gain, speed=speed, inverted=inverted, force=force
+            gain=gain, speed=speed, lockout=lockout, inverted=inverted, force=force
         )
 
     def __set_parameters(self, force, **kwargs):
@@ -740,7 +740,7 @@ class TritechProfiler(object):
                     "inverted", "prf_alt", "scanright",
                     "prf_AGC", "gain", "filt_gain", "adc_threshold",
                     "left_limit", "right_limit",
-                    "range", "nbins", "step"
+                    "range", "nbins", "step", "lockout"
                 )
             }
 
