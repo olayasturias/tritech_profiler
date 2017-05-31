@@ -82,6 +82,7 @@ class TritechProfiler(object):
         self.scanright = True
         self.speed = 1500.0
         self.step = Resolution.ULTIMATE
+        self.lockout = 100
 
         # Override defaults with key-word arguments or ROS parameters.
         for key, value in self.__dict__.iteritems():
@@ -462,7 +463,7 @@ class TritechProfiler(object):
         PrfCtl2 = bitstring.pack('uintle:16', 0)
 
         # Factory defaults. Don't ask.
-        lockout = bitstring.pack("uintle:16", 100)
+        lockout = bitstring.pack("uintle:16", self.lockout)
         minor_axis = bitstring.pack("uintle:16", 1600)
         major_axis = bitstring.pack("uint:8", 1)
 
