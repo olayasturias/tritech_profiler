@@ -429,13 +429,13 @@ class TritechProfiler(object):
         # The gain ranges from 0 to 210.
         AGC_Max = int(self.gain * 210)
         AGC_SetPoint = 90 # default value
-        gain = bitstring.pack("uint:8, uint:8",AGC_Max, AGC_SetPoint)
+        AGC_args = bitstring.pack("uint:8, uint:8",AGC_Max, AGC_SetPoint)
         #
 
         # Slope setting is according to the sonar frequency
         # The equation is slope = f*2/55+106
-        _slope_ch1 = f_txrx_ch1*2/55+106
-        _slope_ch2 = f_txrx_ch2*2/55+106
+        _slope_ch1 = (f_txrx_ch1-1210)*3/79000+150
+        _slope_ch2 = (f_txrx_ch2-1210)*3/79000+150
         slope = bitstring.pack('uintle:16, uintle:16', _slope_ch1,_slope_ch2)
 
         # Set the high speed limit of the motor in units of 10 microseconds.
@@ -475,7 +475,7 @@ class TritechProfiler(object):
         # Order and construct bitstream.
         bitstream = (
             v3b, hd_ctrl, hd_type, tx_rx, range_scale, left_limit, right_limit,
-            adc_threshold, filt_gain, gain, slope, mo_time, step, ScanTime, PrfSp1,
+            adc_threshold, filt_gain, AGC_args, slope, mo_time, step, ScanTime, PrfSp1,
             PrfCtl2, lockout, minor_axis, major_axis, ctl2, scanz
         )
 
