@@ -14,10 +14,18 @@ from tools import ScanSlice, to_radians, to_sonar_angles
 
 __author__ = "Olaya Alvarez, Anass Al-Wohoush"
 
+"""
+.. codeauthor:: Olaya Alvarez Tunon
+: file sonar.py
+"""
+
 
 class TritechProfiler(object):
 
-    """Tritech Profiler sonar.
+    """ *TritechProfiler* class for Tritech Profiler sonar.
+
+    This class provides all the necesary methods to operate the sonar profiler,
+    including the sending of commands to configure, scan, ping, or reboot the sensor.
 
     In order for attribute changes to immediately be reflected on the device,
     use the set() method with the appropriate keyword.
@@ -27,45 +35,130 @@ class TritechProfiler(object):
         with TritechProfiler() as sonar:
             sonar.set(prf_alt=False, range=20)
 
-    All angles are in radians and headings are relative to the blue LED. So, if
+    All angles are in radians and headings are relative to the red LED. So, if
     the sonar were not inverted, 0 radians would be facing forward.
 
-    Attributes:
-        adc_threshold: Analogue detect threshold level.
-        filt_gain: percentage of Adaptive Gain Control that is applied to receiver.
-        agc: True if automatic refining of receiver gain, otherwise 'manual' gain.
-        centred: Whether the sonar motor is centred.
-        clock: Sonar time of the day.
-        conn: Serial connection.
-        prf_alt: True if alternating scan, false if scan in one direction.
-        gain: Initial gain percentage (0.00-1.00).
-        has_cfg: Whether the sonar has acknowledged with mtBBUserData.
-        heading: Current sonar heading in radians.
-        initialized: Whether the sonar has been initialized with parameters.
-        inverted: Whether the sonar is mounted upside down.
-        left_limit: Left limit of sector scan in radians.
-        mo_time: High speed limit of the motor in units of 10 microseconds.
-        motoring: Whether the sonar motor is moving.
-        motor_on: Whether device is powered and motor is primed.
-        nbins: Number of bins per scan line.
-        no_params: Whether the sonar needs parameters before it can scan.
-        up_time: Sonar up time.
-        port: Serial port.
-        range: Scan range in meters.
-        recentering: Whether the sonar is recentering its motor.
-        right_limit: Right limit of sector scans in radians.
-        scanning: Whether the sonar is scanning.
-        scanright: Whether the sonar scanning direction is clockwise.
-        speed: Speed of sound in medium.
-        step: Mechanical resolution (Resolution enumeration).
+    **Attributes**:
+        .. data:: adc_threshold
+
+            Analogue detect threshold level.
+
+        .. data:: filt_gain
+
+            Percentage of Adaptive Gain Control that is applied to receiver.
+
+        .. data:: agc
+
+            True if automatic refining of receiver gain, otherwise 'manual' gain.
+
+        .. data:: centred
+
+            Whether the sonar motor is centred.
+
+        .. data:: clock
+
+            Sonar time of the day.
+
+        .. data:: conn
+
+            Serial connection.
+
+        .. data:: prf_alt
+
+            True if alternating scan, false if scan in one direction.
+
+        .. data:: gain
+
+            Initial gain percentage (0.00-1.00).
+
+        .. data:: has_cfg
+
+            Whether the sonar has acknowledged with mtBBUserData.
+
+        .. data:: heading
+
+            Current sonar heading in radians.
+
+        .. data:: initialized
+
+            Whether the sonar has been initialized with parameters.
+
+        .. data:: inverted
+
+            Whether the sonar is mounted upside down.
+
+        .. data:: left_limit
+
+            Left limit of sector scan in radians.
+
+        .. data:: mo_time
+
+            High speed limit of the motor in units of 10 microseconds.
+
+        .. data:: motoring
+
+            Whether the sonar motor is moving.
+
+        .. data:: motor_on
+
+            Whether device is powered and motor is primed.
+
+        .. data:: nbins
+
+            Number of bins per scan line.
+
+        .. data:: no_params
+
+            Whether the sonar needs parameters before it can scan.
+
+        .. data:: up_time
+
+            Sonar up time.
+
+        .. data:: port
+
+            Serial port.
+
+        .. data:: range
+
+            Scan range in meters.
+
+        .. data:: recentering
+
+            Whether the sonar is recentering its motor.
+
+        .. data:: right_limit
+
+            Right limit of sector scans in radians.
+
+        .. data:: scanning
+
+            Whether the sonar is scanning.
+
+        .. data:: scanright
+
+            Whether the sonar scanning direction is clockwise.
+
+        .. data:: speed
+
+            Speed of sound in medium.
+
+        .. data:: step
+
+            Mechanical resolution (Resolution enumeration).
+
     """
 
     def __init__(self, port="/dev/sonar", **kwargs):
-        """Constructs Sonar object.
+        """
+        Constructs Sonar object.
 
-        Args:
-            port: Serial port (default: /dev/sonar).
-            kwargs: Key-word arguments to pass to set() on initialization.
+        :param port: Serial port (default: /dev/sonar).
+
+        :param kwargs: Key-word arguments to pass to set() on initialization
+
+        :return:
+
         """
         # Parameter defaults.
         self.adc_threshold = 50.0
@@ -115,7 +208,8 @@ class TritechProfiler(object):
         self.preempted = False
 
     def __enter__(self):
-        """Initializes sonar for first use.
+        """
+        Initializes sonar for first use.
 
         Raises:
             SonarNotFound: Sonar port could not be opened.
@@ -124,12 +218,14 @@ class TritechProfiler(object):
         return self
 
     def __exit__(self, type, value, traceback):
-        """Cleans up."""
+        """
+        Cleans up.
+        """
         self.close()
 
     def open(self):
-        print 'open'
-        """Initializes sonar connection and sets default properties.
+        """
+        Initializes sonar connection and sets default properties.
 
         Raises:
             SonarNotFound: Sonar port could not be opened.
@@ -162,8 +258,9 @@ class TritechProfiler(object):
         rospy.loginfo("Sonar is ready for use")
 
     def close(self):
-        print 'close'
-        """Closes sonar connection."""
+        """
+        Closes sonar connection.
+        """
         # Reboot first to clear sonar of all parameters.
         self.send(Message.REBOOT)
         self.conn.close()
@@ -171,20 +268,19 @@ class TritechProfiler(object):
         rospy.loginfo("Closed sonar socket")
 
     def get(self, message=None, wait=2):
-        print "get"
-        """Sends command and returns reply.
+        """
+        Sends command and returns reply.
 
-        Args:
-            message: Message to expect (default: first to come in).
-            wait: Seconds to wait until received if a specific message is
-                required (default: 2).
+        :param message: Message to expect (default: first to come in).
 
-        Returns:
-            Reply.
+        :param kwargs: wait: Seconds to wait until received if a specific message is required (default: 2).
 
-        Raises:
-            SonarNotInitialized: Attempt reading serial without opening port.
-            TimeoutError: Process timed out while waiting for specific message.
+        :return: Reply.
+
+        :raises SonarNotInitialized: Attempt reading serial without opening port.
+
+        :raises TimeoutError: Process timed out while waiting for specific message.
+
         """
         # Verify sonar is initialized.
         if not self.initialized:
