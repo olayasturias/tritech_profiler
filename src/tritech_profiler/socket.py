@@ -16,11 +16,15 @@ __author__ = "Anass Al-Wohoush, Jana Pavlasek, Malcolm Watt"
 
 
 class Socket(object):
+    """
+    Serial communication socket.
 
-    """Serial communication socket.
+    **Attributes**
 
-    Attributes:
-        conn: Serial connection.
+    .. data:: conn
+
+        Serial connection attribute.
+
     """
 
     def __init__(self, port):

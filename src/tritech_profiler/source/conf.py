@@ -24,7 +24,7 @@ import os
 import sys
 import sphinx_rtd_theme
 
-MOCK_MODULES = ['socket', 'Socket', 'tools']
+MOCK_MODULES = ['socket', 'Socket', 'tools', 'exceptions']
 for mod_name in MOCK_MODULES:
 	sys.modules[mod_name] = mock.Mock()
 

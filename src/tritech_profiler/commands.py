@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Tritech Profiler commands."""
+"""It is used to prepare Tritech Profiler commands."""
 
 import bitstring
 
@@ -24,6 +24,20 @@ class Command(object):
 
     def serialize(self):
         """Constructs corresponding string of bytes to send to sonar.
+
+        **Atributes**:
+
+        .. data:: id
+
+            ID of the message (mtAlive, mtHeadData,...)
+
+        .. data:: hex_size
+
+            Size in bytes of the packet
+
+        .. data:: payload
+
+            Data to be added to packet, like configuration parameters
 
         Returns:
             String representation of data.

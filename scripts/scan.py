@@ -18,6 +18,10 @@ from tritech_profiler.msg import TritechMicronConfig
 
 __author__ = "Anass Al-Wohoush, Olaya Alvarez"
 
+"""
+.. codeauthor:: Olaya Alvarez Tunon
+: file scan.py
+"""
 
 def reconfigure(config, level):
     """Reconfigures sonar dynamically.

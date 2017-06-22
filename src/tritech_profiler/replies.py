@@ -11,26 +11,45 @@ __author__ = "Erin Havens, Jey Kumar, Anass Al-Wohoush"
 
 class Reply(object):
 
-    """Parses and verifies reply packets.
+    """
+    Parses and verifies reply packets.
 
-    Attributes:
-        id: Message ID.
-        name: Message ID human-readable name.
-        is_last: Whether packet is last in sequence.
-        payload: Data excluding header and end character.
-        sequence: Packet sequence.
-        size: Number of bytes in packet from 6th byte onwards.
+    **Attributes**
+
+        .. data:: id
+
+            Number which corresponds to message ID, according to protocol documentation
+
+        .. data:: name
+
+            Message ID human-readable name.
+
+        .. data:: is_last
+
+            Whether packet is last in sequence.
+
+        .. data:: payload
+
+            Data excluding header and end character.
+
+        .. data:: sequence
+
+            Packet sequence.
+
+        .. data:: size
+
+            Number of bytes in packet from 6th byte onwards.
     """
 
     def __init__(self, bitstream):
         """Constructs Reply object.
 
-        Args:
-            bitstream: BitStream holding packet to parse.
+        :param bitstream: BitStream holding packet to parse.
 
-        Raises:
-            PacketIncomplete: Packet is incomplete.
-            PacketCorrupted: Packet is corrupted.
+        :raises: PacketIncomplete: Packet is incomplete.
+
+        :raises: PacketCorrupted: Packet is corrupted.
+
         """
         self.bitstream = bitstream
 
@@ -44,20 +63,22 @@ class Reply(object):
         self.parse()
 
     def __str__(self):
-        """Returns string representation of reply."""
+        """
+        Returns string representation of reply.
+        """
         return "<msg: {s.id}, {s.size} bytes, '0x{s.bitstream.hex}'>".format(
             s=self
         )
 
     def parse(self):
-        """Parses packet into header, message ID, sequence and payload.
+        """
+        Parses packet into header, message ID, sequence and payload.
 
         This method also checks if the packet contains all relevant fields and
         has the correct size.
 
-        Raises:
-            PacketIncomplete: Packet is incomplete.
-            PacketCorrupted: Packet is corrupted.
+        :raises: PacketIncomplete: Packet is incomplete.
+        :raises: PacketCorrupted: Packet is corrupted.
         """
         try:
             # Parse message header and check for line feed.

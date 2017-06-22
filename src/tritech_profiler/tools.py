@@ -11,6 +11,10 @@ from geometry_msgs.msg import Point32, Pose, PoseStamped, Quaternion
 
 __author__ = "Anass Al-Wohoush, Olaya Alvarez"
 
+"""
+.. codeauthor:: Olaya Alvarez Tunon
+: file tools.py
+"""
 
 def to_sonar_angles(rad):
     """Converts radians to units of 1/16th of a gradian.

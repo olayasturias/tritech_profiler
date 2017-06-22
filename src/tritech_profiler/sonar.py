@@ -39,17 +39,152 @@ class TritechProfiler(object):
     the sonar were not inverted, 0 radians would be facing forward.
 
     **Attributes**:
-        .. data:: adc_threshold
-
-            Analogue detect threshold level.
-
-        .. data:: filt_gain
-
-            Percentage of Adaptive Gain Control that is applied to receiver.
 
         .. data:: agc
 
-            True if automatic refining of receiver gain, otherwise 'manual' gain.
+            This bit is used to enable/disable the Adaptive Gain Control (AGC) in the sonar receiver. *AGCMax*
+            and *SetPoint* determine the levels for this control. *AGC* applies automatic refining of the
+            receiver Gain. If false applies 'manual' Gain (*AGC_Max*).
+
+            *AGC* will always act on the maximum received echo, and as a result the ``prf_first`` control will
+            de-activate when ``agc`` is enabled.
+
+            **True** if automatic refining of receiver gain, **False** manual gain.
+
+            **Default = True**
+
+
+        .. data:: prf_alt
+
+            This bit governs whether Profiler scanning should be alternative as per a car windscreen wiper (i.e.
+            direction = Scan Alternate), or whether scanning should in one direction only defined by the
+            ``scanright`` bit (Scan Right or Scan Left).
+
+            **True** if alternating scan, **False** if scan in one direction.
+
+            **Default = False**
+
+
+        .. data:: scanright
+
+            This bit determines the scanning direction when ``prf_alt`` (Bit 1) = 0. It is ignored when ``prf_alt`` = 1.
+
+            scanright = 0 = Profiler scans anticlockwise when viewed from top (Scan Left).
+
+            scanright =1 = Clockwise scan rotation (Scan Right).
+
+            **Default = 1**
+
+        .. data:: inverted
+
+            This bit allows the rotation directions to be reversed if the Profiler head is mounted inverted, i.e.
+            when the transducer boot is pointing backwards against direction of travel rather than forwards.
+
+            **Default = 0 = Profiler mounted 'upright', transducer boot pointing forward.**
+
+        .. data:: left_limit
+
+            Left limit of sector scan in radians. ``LeftLim`` refers to the Anti-Clockwise scan limit.
+
+            ``scanright`` = True  = 1st ping is at ``left_limit``
+
+            ``scanright`` = False = 1st ping is at ``right_limit``
+
+            The units are in 1/16th Gradian units, in the range [0, 6399]
+
+            The SeaKing direction convention is as follows, with transducer boot forwards:
+
+            Left 90° = 1600
+
+            Ahead = 3200
+
+            Right 90° = 4800
+
+            Astern = 0 (or 6399)
+
+            The ``cont`` bit in ``HdCtrl`` will override these limits, and allow continuous rotation.
+            The ``stareLLim`` bit in ``HdCtrl`` will cause the head to be driven to the ``LeftLim`` position and
+            "stare" in that direction. If ``LeftLim`` = ``RightLim``, then the head will act as if the ``stareLLim``
+            bit is set.
+
+            To Scan a 90° sector ahead, set:
+
+            LeftLim = 2400 (= Left 45°)
+
+            RightLim = 4000 (= Right 45°)
+
+        .. data:: right_limit
+
+            Left limit of sector scan in radians. ``right_limit`` refers to the Clockwise scan limit.
+
+            ``scanright`` = True  = 1st ping is at ``left_limit``
+
+            ``scanright`` = False = 1st ping is at ``right_limit``
+
+            The units are in 1/16th Gradian units, in the range [0, 6399]
+
+            The SeaKing direction convention is as follows, with transducer boot forwards:
+
+            Left 90° = 1600
+
+            Ahead = 3200
+
+            Right 90° = 4800
+
+            Astern = 0 (or 6399)
+
+            The ``cont`` bit in ``HdCtrl`` will override these limits, and allow continuous rotation.
+            The ``stareLLim`` bit in ``HdCtrl`` will cause the head to be driven to the ``LeftLim`` position and
+            "stare" in that direction. If ``LeftLim`` = ``RightLim``, then the head will act as if the ``stareLLim``
+            bit is set.
+
+            To Scan a 90° sector ahead, set:
+
+            LeftLim = 2400 (= Left 45°)
+
+            RightLim = 4000 (= Right 45°)
+
+        .. data:: adc_threshold
+
+            This sets the analogue detect threshold level on the receiver and controls the sensitivity of the Profiler.
+            A higher detect threshold will make the device less sensitive.
+
+            **Default = 50**
+
+        .. data:: filt_gain
+
+            This is the level of Adaptive Gain Control (%) that is applied to the receiver.
+
+            **Default = 20**
+
+        .. data:: mo_time
+
+            High speed limit of the motor in units of 10 microseconds.
+
+            **Default = 25 to 40 (for Profiling mode)**
+
+        .. data:: step
+
+            This byte sets the scanning motor step angle between ‘pings’, and is in units of 1/16 Gradians. The
+            SeaKing default settings are:
+
+            Low Resolution = 32 (= 2 Gradians = 1.8 °)
+
+            Medium Resolution = 24 (= 1.5 Gradian = 1.35°)
+
+            High Resolution = 16 (= 1 Gradian = 0.9°)
+
+            Ultimate Resolution (= 0.5 Gradian = 0.45°)
+
+        .. data:: lockout
+
+            This value is the time in microseconds at which the Receiver will start sampling after it has transmitted.
+            The factory default setting for this is:
+
+            - Lockout = 271 (for 1100/1210 kHz Profiler channel)
+            - Lockout = 542 (for 580/600 kHz Profiler channel)
+
+            **Default = 100**
 
         .. data:: centred
 
@@ -62,10 +197,6 @@ class TritechProfiler(object):
         .. data:: conn
 
             Serial connection.
-
-        .. data:: prf_alt
-
-            True if alternating scan, false if scan in one direction.
 
         .. data:: gain
 
@@ -82,18 +213,6 @@ class TritechProfiler(object):
         .. data:: initialized
 
             Whether the sonar has been initialized with parameters.
-
-        .. data:: inverted
-
-            Whether the sonar is mounted upside down.
-
-        .. data:: left_limit
-
-            Left limit of sector scan in radians.
-
-        .. data:: mo_time
-
-            High speed limit of the motor in units of 10 microseconds.
 
         .. data:: motoring
 
@@ -127,25 +246,16 @@ class TritechProfiler(object):
 
             Whether the sonar is recentering its motor.
 
-        .. data:: right_limit
-
-            Right limit of sector scans in radians.
-
         .. data:: scanning
 
             Whether the sonar is scanning.
-
-        .. data:: scanright
-
-            Whether the sonar scanning direction is clockwise.
 
         .. data:: speed
 
             Speed of sound in medium.
 
-        .. data:: step
+            **Default = 1500 m/s**
 
-            Mechanical resolution (Resolution enumeration).
 
     """
 
@@ -160,6 +270,7 @@ class TritechProfiler(object):
         :return:
 
         """
+        print 'init'
         # Parameter defaults.
         self.adc_threshold = 50.0
         self.filt_gain = 20.00
@@ -223,13 +334,15 @@ class TritechProfiler(object):
         """
         self.close()
 
+
     def open(self):
         """
         Initializes sonar connection and sets default properties.
 
-        Raises:
-            SonarNotFound: Sonar port could not be opened.
+        :raises: SonarNotFound: Sonar port could not be opened.
+
         """
+        print 'open'
         if not self.conn:
             try:
                 self.conn = Socket(self.port)
@@ -243,6 +356,7 @@ class TritechProfiler(object):
         # Reboot to make sure the sonar is clean.
         self.send(Message.REBOOT)
         self.update()
+        self.send(Message.REBOOT)
 
         # Set default properties.
         self.set(force=True)
@@ -282,6 +396,7 @@ class TritechProfiler(object):
         :raises TimeoutError: Process timed out while waiting for specific message.
 
         """
+        print 'get'
         # Verify sonar is initialized.
         if not self.initialized:
             raise exceptions.SonarNotInitialized()
@@ -328,15 +443,16 @@ class TritechProfiler(object):
         raise exceptions.TimeoutError()
 
     def send(self, command, payload=None):
-        print 'send'
-        """Sends command and returns reply.
-
-        Args:
-            command: Command to send.
-
-        Raises:
-            SonarNotInitialized: Attempt sending command without opening port.
         """
+        Sends command and returns reply.
+
+        :param command: Command to send.
+        :param payload: Fields of the command packet
+        :return: Reply
+
+        :raises SonarNotInitialized: Attempt sending command without opening port.
+        """
+        print 'send'
         if not self.initialized:
             raise exceptions.SonarNotInitialized(command, payload)
 
@@ -346,33 +462,32 @@ class TritechProfiler(object):
             filt_gain=None, adc_threshold=None, left_limit=None, right_limit=None,
             mo_time=None, range=None, gain=None, speed=None, lockout = None,
             inverted=None, force=False):
-        print 'set'
-        """Sends Sonar head command with new properties if needed.
+        """
+        Sends Sonar head command with new properties if needed.
 
         Only the parameters specified will be modified.
 
         If initialized, arguments are compared to current properties in order
         to see if sending the command is necessary.
 
-        Args:
-            filt_gain: Percentage of Adaptive Gain Control applied to receiver.
-            adc_threshold: Analogue detect threshold level.
-            agc: True if automatic AGC, otherwise manual AGC.
-            prf_alt: True if alternate scan, otherwise continuous scan.
-            gain: Initial gain percentage (0.00-1.00).
-            inverted: Whether the sonar is mounted upside down.
-            left_limit: Left limit of sector scan in radians.
-            mo_time: High speed limit of the motor in units of 10 microseconds.
-            range: Scan range in meters.
-            right_limit: Right limit of sector scans in radians.
-            scanright: Whether the sonar scanning direction is clockwise.
-            speed: Speed of sound in medium.
-            step: Mechanical resolution (Resolution enumeration).
-            force: Whether to force setting the parameters or not.
+        :param filt_gain: Percentage of Adaptive Gain Control applied to receiver.
+        :param adc_threshold: Analogue detect threshold level.
+        :param agc: True if automatic AGC, otherwise manual AGC.
+        :param prf_alt: True if alternate scan, otherwise continuous scan.
+        :param gain: Initial gain percentage (0.00-1.00).
+        :param inverted: Whether the sonar is mounted upside down.
+        :param left_limit: Left limit of sector scan in radians.
+        :param mo_time: High speed limit of the motor in units of 10 microseconds.
+        :param range: Scan range in meters.
+        :param right_limit: Right limit of sector scans in radians.
+        :param scanright: Whether the sonar scanning direction is clockwise.
+        :param speed: Speed of sound in medium.
+        :param step: Mechanical resolution (Resolution enumeration).
+        :param force: Whether to force setting the parameters or not.
 
-        Raises:
-            SonarNotInitialized: Sonar is not initialized.
+        :raises SonarNotInitialized: Sonar is not initialized.
         """
+        print 'set'
         if not self.initialized:
             raise exceptions.SonarNotInitialized()
 
@@ -383,19 +498,20 @@ class TritechProfiler(object):
             gain=gain, speed=speed, lockout=lockout, inverted=inverted, force=force
         )
 
+
     def __set_parameters(self, force, **kwargs):
-        print '__set parameters'
-        """Sends Sonar head command to set sonar properties.
+        """
+        Sends Sonar head command to set sonar properties. This function is called
+        by ``set()`` method. See ``set()`` method for more information
 
         Only the parameters specified will be modified.
 
         If initialized, arguments are compared to current properties in order
         to see if sending the command is necessary.
 
-        Args:
-            force: Whether to force set parameters.
-            See set().
+        :param force: Whether to force set parameters.
         """
+        print '_set_parameters'
         rospy.logwarn("Setting parameters...")
 
         # Set and compare sonar properties.
@@ -584,15 +700,18 @@ class TritechProfiler(object):
         rospy.logwarn("Parameters are sent")
 
     def reverse(self):
-        print 'reverse'
-        """Instantaneously reverses scan direction."""
+        """
+        Instantaneously reverses scan direction.
+        """
         payload = bitstring.pack("0x0F")
         self.send(Message.HEAD_COMMAND, payload)
         self.scanright = not self.scanright
 
     def _ping(self):
+        """
+        Commands the sonar to ping once.
+        """
         print '_ping'
-        """Commands the sonar to ping once."""
         # Get current time in milliseconds.
         now = datetime.datetime.now()
         current_time = datetime.timedelta(
@@ -611,18 +730,16 @@ class TritechProfiler(object):
         self.send(Message.SEND_DATA, payload)
 
     def __parse_head_data(self, data):
-        print '__parse head data'
-        """Parses mtHeadData payload and returns parsed bins.
-
-        Args:
-            data: mtHeadData bitstring.
-
-        Returns:
-            Bins.
-
-        Raise:
-            ValueError: If data could not be parsed.
         """
+        Parses mtHeadData payload and returns parsed bins.
+
+        :param mtHeadData bitstring.
+
+        :return: Bins.
+
+        :raises ValueError: If data could not be parsed.
+        """
+        print '_parse_head:data'
         # Any number of exceptions could occur here if the packet is corrupted,
         # so a catch-all approach is used for safety.
         try:
@@ -756,28 +873,27 @@ class TritechProfiler(object):
         return bins
 
     def scan(self, callback):
-        print 'scan'
-        """Sends scan command.
+        """
+        Sends scan command.
 
         This method is blocking but calls callback at every reply with the
         heading and a new dataset.
 
-        To stop a scan, simply call the preempt() method. Otherwise, the scan
+        To stop a scan, simply call the *preempt()* method. Otherwise, the scan
         will run forever.
 
         The intensity at every bin is an integer value ranging between 0 and
         255.
 
-        Args:
-            callback: Callback for feedback.
+        :param callback: Callback for feedback.
                 Called with args=(sonar, slice)
-                where sonar is this sonar instance and slice is a SonarSlice
+                where sonar is this sonar instance and slice is a *SonarSlice*
                 instance.
 
-        Raises:
-            SonarNotInitialized: Sonar is not initialized.
-            SonarNotConfigured: Sonar is not configured for scanning.
+        :raises SonarNotInitialized: Sonar is not initialized.
+        :raises SonarNotConfigured: Sonar is not configured for scanning.
         """
+        print 'scan'
         # Verify sonar is ready to scan.
         self.update()
         if self.no_params or not self.has_cfg:
@@ -836,31 +952,31 @@ class TritechProfiler(object):
             callback(self, slice)
 
     def preempt(self):
-        print 'preempt'
-        """Preempts a scan in progress."""
+        """
+        Preempts a scan in progress.
+        """
         rospy.logwarn("Preempting scan...")
         self.preempted = True
 
     def reboot(self):
-        print 'reboot'
-        """Reboots Sonar.
+        """
+        Reboots Sonar.
 
-        Raises:
-            SonarNotInitialized: Sonar is not initialized.
+        :raises SonarNotInitialized: Sonar is not initialized.
         """
         rospy.logwarn("Rebooting sonar...")
         self.send(Message.REBOOT)
         self.open()
 
     def update(self):
-        print 'update'
-        """Updates Sonar states from mtAlive message.
+        """
+        Updates Sonar states from *mtAlive* message.
 
         Note: This is a blocking function.
 
-        Raises:
-            SonarNotInitialized: Sonar is not initialized.
+        :raises SonarNotInitialized: Sonar is not initialized.
         """
+        print 'Update'
         # Wait until successful no matter what.
         while True:
             try:
@@ -870,12 +986,12 @@ class TritechProfiler(object):
                 continue
 
     def __update_state(self, alive):
-        print '___update state'
-        """Updates Sonar states from mtAlive message.
-
-        Args:
-            alive: mtAlive reply.
         """
+        Updates Sonar states from mtAlive message.
+
+        :param alive: mtAlive reply.
+        """
+        print '_update_state'
         payload = alive.payload
         payload.bytepos = 1
 
@@ -912,8 +1028,8 @@ class TritechProfiler(object):
 
 
 class Resolution(object):
-
-    """Sonar mechanical resolution enumeration.
+    """
+    Sonar mechanical resolution enumeration.
 
     The mechanical resolution is the angle the step motor rotates per scan line
     in radians. A higher resolution slows down the scan.
@@ -925,6 +1041,7 @@ class Resolution(object):
 
     Other resolutions can also be used, but these are the ones documented by
     Tritech.
+
     """
     LOWEST = to_radians(255)  # Not recommended.
     LOWER = to_radians(128)  # Not recommended.
