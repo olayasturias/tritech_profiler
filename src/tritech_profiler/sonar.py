@@ -259,7 +259,7 @@ class TritechProfiler(object):
 
     """
 
-    def __init__(self, port="/dev/sonar", **kwargs):
+    def __init__(self, port="/dev/ttyUSB0", **kwargs):
         """
         Constructs Sonar object.
 
@@ -275,7 +275,7 @@ class TritechProfiler(object):
         self.adc_threshold = 50.0
         self.filt_gain = 20.00
         self.agc = True
-        self.prf_alt = True
+        self.prf_alt = False
         self.gain = 0.50
         self.inverted = False
         self.left_limit = to_radians(0)
@@ -357,6 +357,13 @@ class TritechProfiler(object):
         self.send(Message.REBOOT)
         self.update()
         self.send(Message.REBOOT)
+        #rospy.loginfo('Sending Version Data request...')
+        #self.send(Message.SEND_VERSION)
+        #self.get(Message.VERSION_DATA, 1)
+        #rospy.loginfo('Version Data message received')
+
+        #self.send(Message.SEND_BB_USER)
+        #self.get(Message.BB_USER_DATA)
 
         # Set default properties.
         self.set(force=True)
@@ -461,7 +468,7 @@ class TritechProfiler(object):
     def set(self, agc=None, prf_alt=None, scanright=None, step=None,
             filt_gain=None, adc_threshold=None, left_limit=None, right_limit=None,
             mo_time=None, range=None, gain=None, speed=None, lockout = None,
-            inverted=None, force=False):
+            inverted=None, force=False, port_enabled =True, port_baudrate=115200):
         """
         Sends Sonar head command with new properties if needed.
 
@@ -484,6 +491,8 @@ class TritechProfiler(object):
         :param speed: Speed of sound in medium.
         :param step: Mechanical resolution (Resolution enumeration).
         :param force: Whether to force setting the parameters or not.
+        :param port_enabled: enables/disables virtual serial port
+        :param port_baudrate: stablishes port baudrate for communication
 
         :raises SonarNotInitialized: Sonar is not initialized.
         """
@@ -495,7 +504,8 @@ class TritechProfiler(object):
             agc=agc, prf_alt=prf_alt, scanright=scanright,
             step=step, filt_gain=filt_gain, adc_threshold=adc_threshold, left_limit=left_limit,
             right_limit=right_limit, mo_time=mo_time, range=range,
-            gain=gain, speed=speed, lockout=lockout, inverted=inverted, force=force
+            gain=gain, speed=speed, lockout=lockout, inverted=inverted, force=force, port_enabled=port_enabled,
+            port_baudrate=port_baudrate
         )
 
 
@@ -511,7 +521,6 @@ class TritechProfiler(object):
 
         :param force: Whether to force set parameters.
         """
-        print '_set_parameters'
         rospy.logwarn("Setting parameters...")
 
         # Set and compare sonar properties.
@@ -525,10 +534,17 @@ class TritechProfiler(object):
                     if key != "scanright":
                         only_reverse = False
 
+
         # Return if unnecessary.
         if not necessary:
             rospy.logwarn("Parameters are already set")
             return
+        port_enabled = kwargs.get('port_enabled')
+        if port_enabled:
+            print 'port enabled'
+        else:
+            print 'port disabled'
+
 
         # Return if only switching the motor's direction is necessary.
         if only_reverse:
@@ -597,9 +613,13 @@ class TritechProfiler(object):
         f_txrx_ch1 = 1100000 # in Hz
         f_txrx_ch2 = 1100000 # in Hz
         TxN_ch1 = int(f_txrx_ch1*pow(2,32)/(32*pow(10,6)))
+        TxN_ch1 = 80530636
         TxN_ch2 = int(f_txrx_ch2 * pow(2, 32) / (32 * pow(10, 6)))
+        TxN_ch2 = 147639500
         RxN_ch1 = int((f_txrx_ch1 + 455000)*pow(2,32)/(32 * pow(10,6)))
         RxN_ch2 = int((f_txrx_ch2 + 455000)*pow(2,32)/(32 * pow(10,6)))
+        RxN_ch1 = 141599703
+        RxN_ch2 = 208708567
 
         # TX pulse length: length of sonar pulse in microseconds. Variable with rangescale
         # use default ofs and mul
@@ -696,8 +716,12 @@ class TritechProfiler(object):
         for chunk in bitstream:
             payload.append(chunk)
 
-        self.send(Message.HEAD_COMMAND, payload)
-        rospy.logwarn("Parameters are sent")
+        if port_enabled:
+            self.conn.open()
+            self.send(Message.HEAD_COMMAND, payload)
+            rospy.logwarn("Parameters are sent")
+        else:
+            self.conn.close()
 
     def reverse(self):
         """

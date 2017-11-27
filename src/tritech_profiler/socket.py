@@ -16,10 +16,13 @@ __author__ = "Anass Al-Wohoush, Jana Pavlasek, Malcolm Watt"
 
 
 class Socket(object):
-    """
-    Serial communication socket.
 
-    **Attributes**
+    """
+    *Socket* class for Serial communication socket.
+    This class constains the necessary methods for configuring the serial
+    communication between the sensor and the node itself.
+
+    **Attributes**:
 
     .. data:: conn
 
@@ -65,6 +68,7 @@ class Socket(object):
             PacketCorrupted: Packet is corrupt.
         """
         try:
+            #self.open() ################################ IN CASE GUI CLOSED PORT
             # Wait for the '@' character.
             while not self.conn.read() == "@":
                 pass

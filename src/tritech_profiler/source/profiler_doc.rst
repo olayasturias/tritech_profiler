@@ -76,13 +76,13 @@ Replies class for replies handling
 Socket class for Serial Communication
 #######################################
 
-.. autoclass:: socket.Socket
+.. automodule:: socket
    :members:
 
 Tools
 ########################################
 
-.. automodule:: tools
+.. autoclass:: tools.ScanSlice S
    :members:
 
 **********************************

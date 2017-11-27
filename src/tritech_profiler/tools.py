@@ -6,7 +6,7 @@ import math
 import rospy
 from tritech_profiler.msg import TritechMicronConfig
 from tf.transformations import quaternion_from_euler
-from sensor_msgs.msg import ChannelFloat32, PointCloud
+from sensor_msgs.msg import ChannelFloat32, PointCloud, LaserScan
 from geometry_msgs.msg import Point32, Pose, PoseStamped, Quaternion
 
 __author__ = "Anass Al-Wohoush, Olaya Alvarez"
@@ -62,7 +62,8 @@ def reconfigured(previous_slice, current_slice):
 
 class ScanSlice(object):
 
-    """Scan slice.
+    """
+    *Scan slice.*
 
     Attributes:
         bins: Array of intensities of each return.
@@ -85,6 +86,8 @@ class ScanSlice(object):
         self.config = config
         self.range = config["range"]
         self.step = config["step"]
+        self.angle_min = config["left_limit"]
+        self.angle_max = config["right_limit"]
         self.timestamp = rospy.get_rostime()
 
     def to_config(self, frame):
@@ -129,24 +132,29 @@ class ScanSlice(object):
             for r in range(0, nbins)
         ]
 
-
-        # for r in range (0, nbins):
-        #     angle = r*self.step
-        #     x = self.bins[r]*math.cos(r*self.step)
-        #     y = self.bins[r] * math.sin(r * self.step)
-        #     print '_____________________________________'
-        #     print self.bins[r]
-        #     print angle*180/math.pi
-        #     print x
-        #     print y
-
-        # Set intensity channel.
-        #channel = ChannelFloat32()
-        #0channel.name = "intensity"
-        #channel.values = self.bins
-        #cloud.channels = [channel]
-
         return cloud
+
+    def to_laserscan(self, frame):
+        """Returns a LaserScan message corresponding to slice.
+
+        Args:
+            frame: Frame ID.
+
+        Returns:
+            A sensor_msgs.msg.LaserScan.
+        """
+
+        scan = LaserScan()
+        scan.header.frame_id = frame
+        scan.header.stamp = self.timestamp
+
+        scan.angle_min = self.angle_min
+        scan.angle_max = self.angle_max
+        scan.angle_increment = self.step
+
+        scan.ranges = self.bins
+
+        return scan
 
     def to_posestamped(self, frame):
         """Returns a PoseStamped message corresponding to slice heading.

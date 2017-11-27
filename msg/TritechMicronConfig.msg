@@ -39,3 +39,9 @@ float64 step
 
 # Time in microseconds at which Receiver starts sampling after it has transmitted
 int16 lockout
+
+# Enable/disable virtual port
+bool port_enabled
+
+# Port baudrate
+int16 port_baudrate

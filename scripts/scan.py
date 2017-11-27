@@ -9,7 +9,7 @@ that can be dynamically reconfigured.
 """
 
 import rospy
-from sensor_msgs.msg import PointCloud
+from sensor_msgs.msg import PointCloud, LaserScan
 from tritech_profiler import TritechProfiler
 from geometry_msgs.msg import PoseStamped
 from tritech_profiler.cfg import ScanConfig
@@ -64,6 +64,11 @@ def publish(sonar, slice):
     cloud = slice.to_pointcloud(frame)
     scan_pub.publish(cloud)
 
+    # Publish data as LaserScan.
+
+    scan = slice.to_laserscan(frame)
+    laser_pub.publish(scan)
+
 
     # Publish data as TritechMicronConfig.
     config = slice.to_config(frame)
@@ -73,9 +78,10 @@ def publish(sonar, slice):
 if __name__ == "__main__":
     # Initialize node and publishers.
     rospy.init_node("tritech_profiler",log_level=rospy.DEBUG)
-    scan_pub = rospy.Publisher("~scan", PointCloud, queue_size=800)
+    scan_pub    = rospy.Publisher("~scan", PointCloud, queue_size=800)
+    laser_pub   = rospy.Publisher("~singlescan", LaserScan, queue_size=800)
     heading_pub = rospy.Publisher("~heading", PoseStamped, queue_size=800)
-    conf_pub = rospy.Publisher("~config", TritechMicronConfig, queue_size=800)
+    conf_pub    = rospy.Publisher("~config", TritechMicronConfig, queue_size=800)
 
     # Get frame name and port.
     frame = rospy.get_param("~frame")
