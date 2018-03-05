@@ -151,6 +151,9 @@ class ScanSlice(object):
         scan.angle_min = self.angle_min
         scan.angle_max = self.angle_max
         scan.angle_increment = self.step
+	# points out if this range are discarded
+	scan.range_min = 0.0
+	scan.range_max = 1000.0
 
         scan.ranges = self.bins
 

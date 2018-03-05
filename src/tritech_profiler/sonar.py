@@ -288,6 +288,8 @@ class TritechProfiler(object):
         self.step = Resolution.ULTIMATE
         self.lockout = 100
 
+        self.port_enabled = True
+
         # Override defaults with key-word arguments or ROS parameters.
         for key, value in self.__dict__.iteritems():
             if key in kwargs:
@@ -421,26 +423,27 @@ class TritechProfiler(object):
         # wait forever.
         while message is None or datetime.datetime.now() < end:
             try:
-                reply = self.conn.get_reply()
+                if self.port_enabled:
+                    reply = self.conn.get_reply()
 
-                # Update state if mtAlive.
-                if reply.id == Message.ALIVE:
-                    self.__update_state(reply)
+                    # Update state if mtAlive.
+                    if reply.id == Message.ALIVE:
+                        self.__update_state(reply)
 
 
-                # If first was asked, respond immediately.
-                if message is None:
-                    return reply
+                    # If first was asked, respond immediately.
+                    if message is None:
+                        return reply
 
-                # Otherwise, verify reply ID.
-                if reply.id == message:
-                    rospy.logdebug("Found %s message", expected_name)
-                    return reply
-                elif reply.id != Message.ALIVE:
-                    rospy.logwarn(
-                        "Received unexpected %s message",
-                        reply.name
-                    )
+                    # Otherwise, verify reply ID.
+                    if reply.id == message:
+                        rospy.logdebug("Found %s message", expected_name)
+                        return reply
+                    elif reply.id != Message.ALIVE:
+                        rospy.logwarn(
+                            "Received unexpected %s message",
+                            reply.name
+                        )
             except exceptions.PacketCorrupted, serial.SerialException:
                 # Keep trying.
                 continue
@@ -541,9 +544,9 @@ class TritechProfiler(object):
             return
         port_enabled = kwargs.get('port_enabled')
         if port_enabled:
-            print 'port enabled'
+            self.port_enabled = True
         else:
-            print 'port disabled'
+            self.port_enabled = False
 
 
         # Return if only switching the motor's direction is necessary.

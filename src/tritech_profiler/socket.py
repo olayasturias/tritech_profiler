@@ -36,11 +36,12 @@ class Socket(object):
         Args:
             port: Serial port.
         """
-        self.conn = serial.Serial(port=port, baudrate=115200)
+        self.conn = serial.Serial(port=port, baudrate=115200, timeout=20)
 
     def open(self):
         """Opens serial connection."""
-        self.conn.open()
+        if not self.conn.is_open:
+            self.conn.open()
 
     def close(self):
         """Closes serial connection."""
