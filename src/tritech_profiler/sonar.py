@@ -301,6 +301,7 @@ class TritechProfiler(object):
 
         # Connection properties.
         self.port = port
+        self.baudrate = 115200
         self.conn = None
         self.initialized = False
 
@@ -347,7 +348,7 @@ class TritechProfiler(object):
         print 'open'
         if not self.conn:
             try:
-                self.conn = Socket(self.port)
+                self.conn = Socket(self.port,self.baudrate)
             except OSError as e:
                 raise exceptions.SonarNotFound(self.port, e)
 
@@ -471,7 +472,8 @@ class TritechProfiler(object):
     def set(self, agc=None, prf_alt=None, scanright=None, step=None,
             filt_gain=None, adc_threshold=None, left_limit=None, right_limit=None,
             mo_time=None, range=None, gain=None, speed=None, lockout = None,
-            inverted=None, force=False, port_enabled =True, port_baudrate=115200):
+            inverted=None, force=False, port_enabled =True, 
+            profiler_port_baudrate=115200, profiler_port="/dev/ttyUSB0"):
         """
         Sends Sonar head command with new properties if needed.
 
@@ -495,7 +497,8 @@ class TritechProfiler(object):
         :param step: Mechanical resolution (Resolution enumeration).
         :param force: Whether to force setting the parameters or not.
         :param port_enabled: enables/disables virtual serial port
-        :param port_baudrate: stablishes port baudrate for communication
+        :param profiler_port_baudrate: stablishes port baudrate for communication
+        :param profiler_port: name of serial port where the profiler is connected
 
         :raises SonarNotInitialized: Sonar is not initialized.
         """
@@ -508,7 +511,7 @@ class TritechProfiler(object):
             step=step, filt_gain=filt_gain, adc_threshold=adc_threshold, left_limit=left_limit,
             right_limit=right_limit, mo_time=mo_time, range=range,
             gain=gain, speed=speed, lockout=lockout, inverted=inverted, force=force, port_enabled=port_enabled,
-            port_baudrate=port_baudrate
+            profiler_port_baudrate=profiler_port_baudrate, profiler_port = profiler_port
         )
 
 
@@ -545,9 +548,12 @@ class TritechProfiler(object):
         port_enabled = kwargs.get('port_enabled')
         if port_enabled:
             self.port_enabled = True
+
         else:
             self.port_enabled = False
 
+        self.port = kwargs.get('profiler_port')
+        self.baudrate = kwargs.get('profiler_port_baudrate')
 
         # Return if only switching the motor's direction is necessary.
         if only_reverse:
@@ -576,6 +582,9 @@ class TritechProfiler(object):
         rospy.loginfo("MOTOR TIME:           %s us", self.mo_time)
         rospy.loginfo("CLOCKWISE:            %s", self.scanright)
         rospy.loginfo("SPEED:                %s m/s", self.speed)
+        rospy.loginfo("PORT ENABLED:         %s", self.port_enabled)
+        rospy.loginfo("PORT:                 %s", self.port)
+        rospy.loginfo("BAUDRATE:             %s bauds", self.baudrate)
 
         # This device is not Dual Channel so skip the “V3B” Gain Parameter
         # block: 0x01 for normal, 0x1D for extended V3B Gain Parameters.
@@ -720,6 +729,8 @@ class TritechProfiler(object):
             payload.append(chunk)
 
         if port_enabled:
+            self.conn.conn.port = self.port
+            self.conn.conn.baudrate = self.baudrate
             self.conn.open()
             self.send(Message.HEAD_COMMAND, payload)
             rospy.logwarn("Parameters are sent")

@@ -30,13 +30,16 @@ class Socket(object):
 
     """
 
-    def __init__(self, port):
+    def __init__(self, port,baudrate):
         """Constructs Socket object.
 
         Args:
             port: Serial port.
         """
-        self.conn = serial.Serial(port=port, baudrate=115200, timeout=20)
+
+        self.conn = serial.Serial(port=port,baudrate=baudrate,timeout=20)
+        self.conn.port = port
+        self.conn.baudrate = baudrate
 
     def open(self):
         """Opens serial connection."""
