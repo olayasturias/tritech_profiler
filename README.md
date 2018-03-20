@@ -8,7 +8,7 @@ This ROS package configures and communicates with the Tritech Profiling sonar.
 You must clone this repository as `tritech_profiler` into your catkin workspace:
 
 ```bash
-git clone https://github.com/olayasturias/catkin_ws/tritech_profiler
+git clone https://github.com/olayasturias/tritech_profiler
 ```
 
 ## Dependencies
@@ -65,11 +65,4 @@ as such:
 rosrun rqt_reconfigure rqt_reconfigure
 ```
 
-## Visualizing
-
-The scan data can be conveniently visualized with `rviz`.
-Simply, add the `tritech_micron/scan` topic as a `PointCloud` message to the
-view and make sure to set the `Decay Time` parameter to the number of seconds
-it takes to run a full scan in order to see the full scan at once instead of
-only one slice.
 
