@@ -391,7 +391,7 @@ class TritechProfiler(object):
         self.initialized = False
         rospy.loginfo("Closed sonar socket")
 
-    def get(self, message=None, wait=2):
+    def get(self, message=None, wait=4):
         """
         Sends command and returns reply.
 
@@ -425,6 +425,7 @@ class TritechProfiler(object):
         while message is None or datetime.datetime.now() < end:
             try:
                 self.port_enabled = True
+                #print self.port_enabled
                 if self.port_enabled:
                     reply = self.conn.get_reply()
 
@@ -555,7 +556,7 @@ class TritechProfiler(object):
         else:
             self.port_enabled = False
 
-        self.port_enabled = True
+        #self.port_enabled = True
 
 
         self.port = kwargs.get('profiler_port')

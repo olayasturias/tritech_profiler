@@ -41,7 +41,7 @@ def reconfigure(config, level):
         config.pop("groups")
 
     # Set parameters.
-    print 'llamo a set y pongo lo que me sale de ahí'
+
     sonar.set(**config)
     return config
 

@@ -37,7 +37,7 @@ class Socket(object):
             port: Serial port.
         """
 
-        self.conn = serial.Serial(port=port,baudrate=baudrate,timeout=20)
+        self.conn = serial.Serial(port=port,baudrate=baudrate,timeout=40)
         self.conn.port = port
         self.conn.baudrate = baudrate
 
