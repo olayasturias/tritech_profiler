@@ -8,7 +8,7 @@ import datetime
 import bitstring
 import exceptions
 from math import pow
-from socket import Socket
+from tsocket import Socket
 from messages import Message
 from tools import ScanSlice, to_radians, to_sonar_angles
 
@@ -274,7 +274,7 @@ class TritechProfiler(object):
         # Parameter defaults.
         self.adc_threshold = 50.0
         self.filt_gain = 20.00
-        self.agc = True
+        self.agc = False
         self.prf_alt = False
         self.gain = 0.50
         self.inverted = False
@@ -476,7 +476,7 @@ class TritechProfiler(object):
     def set(self, agc=None, prf_alt=None, scanright=None, step=None,
             filt_gain=None, adc_threshold=None, left_limit=None, right_limit=None,
             mo_time=None, range=None, gain=None, speed=None, lockout = None,
-            inverted=None, force=False, port_enabled =True, 
+            inverted=None, force=False, port_enabled =True,
             profiler_port_baudrate=115200, profiler_port="/dev/ttyUSB0"):
         """
         Sends Sonar head command with new properties if needed.
@@ -595,7 +595,7 @@ class TritechProfiler(object):
 
         # This device is not Dual Channel so skip the “V3B” Gain Parameter
         # block: 0x01 for normal, 0x1D for extended V3B Gain Parameters.
-        v3b = bitstring.pack("0x01")
+        v3b = bitstring.pack("0x1D")
 
         # Construct the HdCtrl bytes to control operation:
         #   Bit 0:  prf_AGC         0: AGC off(def) 1: AGC On
@@ -614,8 +614,16 @@ class TritechProfiler(object):
         #   Bit 13: prf_Master      0: N/A          1: default for single profiler
         #   Bit 14: prf_Mirror      0: default      1: N/A
         #   Bit 15: IgnoreSensor    0: default      1: emergencies
+        # hd_ctrl = bitstring.pack(
+        #     "0b001000110000, bool, bool, bool, bool",
+        #     self.inverted, self.scanright, self.prf_alt, self.agc
+        # )
+        # hd_ctrl = bitstring.pack(
+        #     "0b 0010 1111 0000, bool, bool, bool, bool",
+        #     self.inverted, self.scanright, self.prf_alt, self.agc
+        # )
         hd_ctrl = bitstring.pack(
-            "0b001000110000, bool, bool, bool, bool",
+            "0b 011000111000, bool, bool, bool, bool",
             self.inverted, self.scanright, self.prf_alt, self.agc
         )
 
@@ -627,18 +635,17 @@ class TritechProfiler(object):
 
         # TX/RX transmitter constants:
         # f = transmitter frequency in Hertz
-        # TxN = f*2^32/32e6
-        # RxN = (f+455000)*2^32/32e6
-        f_txrx_ch1 = 1100000 # in Hz
+
+        f_txrx_ch1 = 600000 # in Hz
         f_txrx_ch2 = 1100000 # in Hz
-        TxN_ch1 = int(f_txrx_ch1*pow(2,32)/(32*pow(10,6)))
-        TxN_ch1 = 80530636
-        TxN_ch2 = int(f_txrx_ch2 * pow(2, 32) / (32 * pow(10, 6)))
-        TxN_ch2 = 147639500
+
+        TxN_ch1 = int(f_txrx_ch1*pow(2,32)/(32*pow(10,6))) # = 147639500
+
+        TxN_ch2 = int(f_txrx_ch2 * pow(2, 32) / (32 * pow(10, 6))) #= 147639500
+
         RxN_ch1 = int((f_txrx_ch1 + 455000)*pow(2,32)/(32 * pow(10,6)))
         RxN_ch2 = int((f_txrx_ch2 + 455000)*pow(2,32)/(32 * pow(10,6)))
-        RxN_ch1 = 141599703
-        RxN_ch2 = 208708567
+
 
         # TX pulse length: length of sonar pulse in microseconds. Variable with rangescale
         # use default ofs and mul
@@ -649,6 +656,7 @@ class TritechProfiler(object):
         # Packing Tx/Rx constants and  TX pulse length
         tx_rx = bitstring.pack('uintle:32,uintle:32,uintle:32,uintle:32,uintle:16',
                                 TxN_ch1, TxN_ch2, RxN_ch1, RxN_ch2, TxPulseLen)
+
 
         # Range scale does not control the sonar, only provides a way to note
         # the current settings in a human readable format.
@@ -680,14 +688,14 @@ class TritechProfiler(object):
         # Set the initial gain of each channel of the sonar receiver.
         # The gain ranges from 0 to 210.
         AGC_Max = int(self.gain * 210)
-        AGC_SetPoint = 90 # default value
+        AGC_SetPoint = 189 # default value = 90, but Seanet sends this value...
         AGC_args = bitstring.pack("uint:8, uint:8",AGC_Max, AGC_SetPoint)
         #
 
         # Slope setting is according to the sonar frequency
-        # The equation is slope = f*2/55+106
-        _slope_ch1 = (f_txrx_ch1-1210)*3/79000+150
-        _slope_ch2 = (f_txrx_ch2-1210)*3/79000+150
+        # The equation is slope = (f*7/1000+11560)/142
+        _slope_ch1 = (f_txrx_ch1*7/1000+11560)/142
+        _slope_ch2 = (f_txrx_ch2*7/1000+11560)/142
         slope = bitstring.pack('uintle:16, uintle:16', _slope_ch1,_slope_ch2)
 
         # Set the high speed limit of the motor in units of 10 microseconds.
@@ -703,8 +711,9 @@ class TritechProfiler(object):
 
         # ScanTime in 10 ms units.
         nbins = bitstring.pack("uintle:16", self.nbins)
-        _interval = 2 * self.range * self.nbins/ self.speed / 10e-3
-        _interval = _interval + 1 if _interval % 2 else _interval
+        #_interval = 2 * self.range * self.nbins/ self.speed / 10e-3
+        #_interval = _interval + 1 if _interval % 2 else _interval
+        _interval = 30 # Seanet as well
         ScanTime = bitstring.pack("uintle:16", int(_interval))
 
         # Spare bytes, fill with zero
@@ -714,6 +723,7 @@ class TritechProfiler(object):
         PrfCtl2 = bitstring.pack('uintle:16', 0)
 
         # Factory defaults. Don't ask.
+
         lockout = bitstring.pack("uintle:16", self.lockout)
         minor_axis = bitstring.pack("uintle:16", 1600)
         major_axis = bitstring.pack("uint:8", 1)
@@ -724,11 +734,27 @@ class TritechProfiler(object):
         # Special devices setting. Should be left blank.
         scanz = bitstring.pack("uint:8, uint:8", 0, 0)
 
+        v3b_adth1     = bitstring.pack('0x32')
+        v3b_adth2     = bitstring.pack('0x32')
+        v3b_filtgain1 = bitstring.pack('0x01')
+        v3b_filtgain2 = bitstring.pack('0x14')
+        v3b_agcmax1   = bitstring.pack('0x69')
+        v3b_agcmax2   = bitstring.pack('0x69')
+        v3b_setpoint1 = bitstring.pack('0xBD')
+        v3b_setpoint2 = bitstring.pack('0xBD')
+        v3b_slope1    = bitstring.pack('uintle:16', 110)
+        v3b_slope2    = bitstring.pack('uintle:16', 150)
+        v3b_sloped1   = bitstring.pack('uintle:16', 0)
+        v3b_sloped2   = bitstring.pack('uintle:16', 0)
+
         # Order and construct bitstream.
         bitstream = (
             v3b, hd_ctrl, hd_type, tx_rx, range_scale, left_limit, right_limit,
             adc_threshold, filt_gain, AGC_args, slope, mo_time, step, ScanTime, PrfSp1,
-            PrfCtl2, lockout, minor_axis, major_axis, ctl2, scanz
+            PrfCtl2, lockout, minor_axis, major_axis, ctl2, scanz, v3b_adth1,
+            v3b_adth2, v3b_filtgain1, v3b_filtgain2, v3b_agcmax1, v3b_agcmax2,
+            v3b_setpoint1, v3b_setpoint2, v3b_slope1, v3b_slope2, v3b_sloped1,
+            v3b_sloped2
         )
 
         payload = bitstring.BitStream()
@@ -743,6 +769,10 @@ class TritechProfiler(object):
             rospy.logwarn("Parameters are sent")
         else:
             self.conn.close()
+        return hd_ctrl,hd_type,TxN_ch1,TxN_ch2,RxN_ch1,RxN_ch2,TxPulseLen,tx_rx,
+        range_scale, left_limit,right_limit,adc_threshold,filt_gain,
+        AGC_args,slope,mo_time,step,ScanTime,lockout,minor_axis,
+        major_axis,payload
 
     def reverse(self):
         """
@@ -763,9 +793,8 @@ class TritechProfiler(object):
             hours=now.hour, minutes=now.minute,
             seconds=now.second, microseconds=0
         )
-        payload = bitstring.pack(
-            "uintle:32",
-            current_time.total_seconds() * 1000
+        payload = bitstring.pack("uintle:8 , uintle:8, uintle:8, uintle:8, uintle:8, uintle:8, uintle:32",
+                                 255, 20, 7, 25, 128, 20,current_time.total_seconds() * 1000
         )
 
         # Reset offset for up time.
@@ -906,11 +935,12 @@ class TritechProfiler(object):
             # Dbytes is the number of bytes with data to follow.
             dbytes = data.read(16).uintle
             self.nbins = dbytes
-            bin_size = 8
+            bin_size = 16 # antes 8
             rospy.logdebug("DBytes is %d", dbytes)
 
             # Get bins.
-            bins = [data.read(bin_size).uint for i in range(self.nbins)]
+            bins = [data.read(bin_size).uintle for i in range(self.nbins)]
+            print bins
         except Exception as e:
             # Damn.
             raise ValueError(e)

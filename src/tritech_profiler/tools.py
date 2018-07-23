@@ -4,7 +4,7 @@
 
 import math
 import rospy
-from tritech_profiler.msg import TritechMicronConfig
+#from tritech_profiler.msg import TritechMicronConfig
 from tf.transformations import quaternion_from_euler
 from sensor_msgs.msg import ChannelFloat32, PointCloud, LaserScan
 from geometry_msgs.msg import Point32, Pose, PoseStamped, Quaternion
@@ -100,11 +100,12 @@ class ScanSlice(object):
         Returns:
             TritechMicronConfig.
         """
-        config = TritechMicronConfig(**self.config)
-        config.header.frame_id = frame
-        config.header.stamp = self.timestamp
+        #config = TritechMicronConfig(**self.config)
+        #config.header.frame_id = frame
+        #config.header.stamp = self.timestamp
 
-        return config
+        #return config
+        return True
 
     def to_pointcloud(self, frame):
         """Returns a PointCloud message corresponding to slice.
@@ -123,7 +124,7 @@ class ScanSlice(object):
 
         # Convert bins to list of Point32 messages.
         nbins = self.config["nbins"]
-        r_step = self.range / nbins
+        r_step = self.config["step"]
         x_unit = math.cos(self.heading) * r_step
         y_unit = math.sin(self.heading) * r_step
 
@@ -131,11 +132,12 @@ class ScanSlice(object):
             Point32(x=self.bins[r]*math.cos(r*self.step), y=self.bins[r]*math.sin(r*self.step), z=0.00)
             for r in range(0, nbins)
         ]
+        print ('number of pointcluds',nbins)
 
         return cloud
 
     def to_laserscan(self, frame):
-        """Returns a LaserScan message corresponding to slice.
+        """Returns a LaserScan message correspon2ding to slice.
 
         Args:
             frame: Frame ID.
@@ -151,11 +153,14 @@ class ScanSlice(object):
         scan.angle_min = self.angle_min
         scan.angle_max = self.angle_max
         scan.angle_increment = self.step
-	# points out if this range are discarded
-	scan.range_min = 0.0
-	scan.range_max = 1000.0
+        #scan.ranges = self.bins
+        scan.ranges = [b*1.45/2000 for b in self.bins]
 
-        scan.ranges = self.bins
+        print ('tipo de variable',type(self.bins))
+        print ('number of laserscans',len(self.bins))
+        # points out if this range are discarded
+        scan.range_min = 0.0
+        scan.range_max = 70000.0
 
         return scan
 

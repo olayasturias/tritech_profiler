@@ -52,13 +52,16 @@ class Reply(object):
 
         """
         self.bitstream = bitstream
-
         self.id = 0
         self.name = "<unknown>"
         self.is_last = False
         self.payload = None
         self.sequence = 0
         self.size = 0
+
+        file = open('hexfile.txt','a')
+        file.write(str(self.bitstream)+'\n')
+        file.close()
 
         self.parse()
 
@@ -182,5 +185,10 @@ class Reply(object):
             self.bitstream.bytepos = 13
             size_payload = (self.size - 8) * 8
             self.payload = self.bitstream.read(size_payload)
+
+            file = open('hexfile.txt','a')
+            file.write('payload:'+str(self.payload)+'\n')
+            file.close()
+
         except (ValueError, ReadError) as e:
             raise PacketCorrupted("Unexpected error", e)

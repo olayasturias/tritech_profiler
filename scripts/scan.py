@@ -71,8 +71,8 @@ def publish(sonar, slice):
 
 
     # Publish data as TritechMicronConfig.
-    config = slice.to_config(frame)
-    conf_pub.publish(config)
+    #config = slice.to_config(frame)
+    #conf_pub.publish(config)
 
 
 if __name__ == "__main__":
