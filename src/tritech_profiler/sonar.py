@@ -328,6 +328,7 @@ class TritechProfiler(object):
         Raises:
             SonarNotFound: Sonar port could not be opened.
         """
+        print 'enter'
         self.open()
         return self
 
@@ -424,7 +425,7 @@ class TritechProfiler(object):
         # wait forever.
         while message is None or datetime.datetime.now() < end:
             try:
-                self.port_enabled = True
+                #self.port_enabled = True
                 #print self.port_enabled
                 if self.port_enabled:
                     reply = self.conn.get_reply()
@@ -549,12 +550,14 @@ class TritechProfiler(object):
         if not necessary:
             rospy.logwarn("Parameters are already set")
             return
-        port_enabled = kwargs.get('port_enabled')
-        if port_enabled:
-            self.port_enabled = True
 
-        else:
-            self.port_enabled = False
+        port_enabled = kwargs.get('port_enabled')
+        self.port_enabled = port_enabled
+        # if port_enabled:
+        #     self.port_enabled = True
+        #
+        # else:
+        #     self.port_enabled = False
 
         #self.port_enabled = True
 
@@ -734,16 +737,16 @@ class TritechProfiler(object):
         # Special devices setting. Should be left blank.
         scanz = bitstring.pack("uint:8, uint:8", 0, 0)
 
-        v3b_adth1     = bitstring.pack('0x32')
-        v3b_adth2     = bitstring.pack('0x32')
+        v3b_adth1     = bitstring.pack('uintle:8',self.adc_threshold)
+        v3b_adth2     = bitstring.pack('uintle:8',self.adc_threshold)
         v3b_filtgain1 = bitstring.pack('0x01')
         v3b_filtgain2 = bitstring.pack('0x14')
-        v3b_agcmax1   = bitstring.pack('0x69')
-        v3b_agcmax2   = bitstring.pack('0x69')
-        v3b_setpoint1 = bitstring.pack('0xBD')
-        v3b_setpoint2 = bitstring.pack('0xBD')
-        v3b_slope1    = bitstring.pack('uintle:16', 110)
-        v3b_slope2    = bitstring.pack('uintle:16', 150)
+        v3b_agcmax1   = bitstring.pack('uintle:8', AGC_Max)
+        v3b_agcmax2   = bitstring.pack('uintle:8', AGC_Max)
+        v3b_setpoint1 = bitstring.pack('uintle:8', AGC_SetPoint)
+        v3b_setpoint2 = bitstring.pack('uintle:8', AGC_SetPoint)
+        v3b_slope1    = bitstring.pack('uintle:16', _slope_ch1)
+        v3b_slope2    = bitstring.pack('uintle:16', _slope_ch2)
         v3b_sloped1   = bitstring.pack('uintle:16', 0)
         v3b_sloped2   = bitstring.pack('uintle:16', 0)
 
@@ -940,7 +943,7 @@ class TritechProfiler(object):
 
             # Get bins.
             bins = [data.read(bin_size).uintle for i in range(self.nbins)]
-            print bins
+
         except Exception as e:
             # Damn.
             raise ValueError(e)

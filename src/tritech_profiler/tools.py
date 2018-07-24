@@ -132,7 +132,6 @@ class ScanSlice(object):
             Point32(x=self.bins[r]*math.cos(r*self.step), y=self.bins[r]*math.sin(r*self.step), z=0.00)
             for r in range(0, nbins)
         ]
-        print ('number of pointcluds',nbins)
 
         return cloud
 
@@ -156,8 +155,6 @@ class ScanSlice(object):
         #scan.ranges = self.bins
         scan.ranges = [b*1.45/2000 for b in self.bins]
 
-        print ('tipo de variable',type(self.bins))
-        print ('number of laserscans',len(self.bins))
         # points out if this range are discarded
         scan.range_min = 0.0
         scan.range_max = 70000.0
