@@ -40,6 +40,7 @@ class Socket(object):
         self.conn = serial.Serial(port=port,baudrate=baudrate,timeout=40)
         self.conn.port = port
         self.conn.baudrate = baudrate
+        self.port_enabled = True
 
     def open(self):
         """Opens serial connection."""
@@ -74,12 +75,12 @@ class Socket(object):
         try:
             #self.open() ################################ IN CASE GUI CLOSED PORT
             # Wait for the '@' character.
-            while not self.conn.read() == "@":
+            while not self.conn.read() == "@" and self.port_enabled:
                 pass
 
             # Read one line at a time until packet is complete and parsed.
             packet = bitstring.BitStream("0x40")
-            while True:
+            while self.port_enabled:
                 # Read until new line.
                 current_line = self.conn.readline()
                 for char in current_line:
@@ -92,14 +93,18 @@ class Socket(object):
                 except PacketIncomplete:
                     # Keep looking.
                     continue
-
-            rospy.logdebug("Received %s: %s", reply.name, reply.payload)
-            return reply
+            if self.port_enabled:
+                rospy.logdebug("Received %s: %s", reply.name, reply.payload)
+                return reply
+            else:
+                return Reply(bitstring.BitStream("0x000A"))
         except select.error as (code, msg):
             # Set SIGINT as KeyboardInterrupt correctly, because pyserial has
             # problems.
-            if code == errno.EINTR:
-                raise KeyboardInterrupt()
-
-            # Otherwise, reraise.
-            raise
+            # if code == errno.EINTR:
+            #     raise KeyboardInterrupt()
+            #
+            # # Otherwise, reraise.
+            # raise
+            rospy.logerr('could not read stream. Have you closed the port?')
+            return

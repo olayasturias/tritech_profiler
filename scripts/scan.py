@@ -87,12 +87,15 @@ if __name__ == "__main__":
     frame = rospy.get_param("~frame")
     port = rospy.get_param("~port")
 
+
     with TritechProfiler(port=port) as sonar:
         try:
             # Initialize dynamic reconfigure server and scan.
             Server(ScanConfig, reconfigure)
 
             # Scan.
-            sonar.scan(callback=publish)
+            if sonar.port_enabled:
+                sonar.scan(callback=publish)
         except KeyboardInterrupt:
             sonar.preempt()
+    #rospy.delete_param('port_enabled')

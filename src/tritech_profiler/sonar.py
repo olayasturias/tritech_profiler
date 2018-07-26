@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """Tritech Profiler sonar."""
-
+from tritech_profiler.cfg import ScanConfig
+from dynamic_reconfigure.server import Server
 import rospy
 import serial
 import datetime
@@ -11,6 +12,8 @@ from math import pow
 from tsocket import Socket
 from messages import Message
 from tools import ScanSlice, to_radians, to_sonar_angles
+from tritech_profiler.cfg import ScanConfig
+from dynamic_reconfigure.server import Server
 
 __author__ = "Olaya Alvarez, Anass Al-Wohoush"
 
@@ -18,7 +21,6 @@ __author__ = "Olaya Alvarez, Anass Al-Wohoush"
 .. codeauthor:: Olaya Alvarez Tunon
 : file sonar.py
 """
-
 
 class TritechProfiler(object):
 
@@ -321,6 +323,9 @@ class TritechProfiler(object):
         self._time_offset = datetime.timedelta(0)
         self.preempted = False
 
+
+
+
     def __enter__(self):
         """
         Initializes sonar for first use.
@@ -336,7 +341,30 @@ class TritechProfiler(object):
         """
         Cleans up.
         """
+        print '__exit__'
         self.close()
+
+    def reconfigure(self, config, level):
+        """Reconfigures sonar dynamically.
+
+        Args:
+            config: New configuration.
+            level: Level bitmask.
+
+        Returns:
+            Configuration.
+        """
+        rospy.loginfo("Reconfiguring sonar")
+        rospy.logdebug("Configuration requested: %r, %r", config, level)
+
+        # Remove additional keys.
+        if "groups" in config:
+            config.pop("groups")
+
+        # Set parameters.
+
+        self.set(**config)
+        return config
 
 
     def open(self):
@@ -347,6 +375,8 @@ class TritechProfiler(object):
 
         """
         print 'open'
+        if not self.port_enabled:
+            return
         if not self.conn:
             try:
                 self.conn = Socket(self.port,self.baudrate)
@@ -386,10 +416,15 @@ class TritechProfiler(object):
         """
         Closes sonar connection.
         """
+        print 'close'
+        print self.port_enabled
         # Reboot first to clear sonar of all parameters.
-        self.send(Message.REBOOT)
-        self.conn.close()
-        self.initialized = False
+        if self.port_enabled:
+            self.send(Message.REBOOT)
+            self.conn.close()
+            self.initialized = False
+        else:
+            print 'switched port, closing profiler'
         rospy.loginfo("Closed sonar socket")
 
     def get(self, message=None, wait=4):
@@ -426,7 +461,7 @@ class TritechProfiler(object):
         while message is None or datetime.datetime.now() < end:
             try:
                 #self.port_enabled = True
-                #print self.port_enabled
+                print ('valor de port enabled en get reply',self.port_enabled)
                 if self.port_enabled:
                     reply = self.conn.get_reply()
 
@@ -448,6 +483,8 @@ class TritechProfiler(object):
                             "Received unexpected %s message",
                             reply.name
                         )
+                else:
+                    pass
                 #print ('port enabled:',self.port_enabled)
                 #rospy.sleep(0.1)
             except exceptions.PacketCorrupted, serial.SerialException:
@@ -456,6 +493,9 @@ class TritechProfiler(object):
 
         # Timeout.
         rospy.logerr("Timed out before receiving message: %s", expected_name)
+
+        # if expected_name == 'ALIVE':
+        #         Server(ScanConfig, self.reconfigure)
         raise exceptions.TimeoutError()
 
     def send(self, command, payload=None):
@@ -469,7 +509,7 @@ class TritechProfiler(object):
         :raises SonarNotInitialized: Attempt sending command without opening port.
         """
         print 'send'
-        if not self.initialized:
+        if not self.initialized and self.port_enabled:
             raise exceptions.SonarNotInitialized(command, payload)
 
         self.conn.send(command, payload)
@@ -508,8 +548,13 @@ class TritechProfiler(object):
         :raises SonarNotInitialized: Sonar is not initialized.
         """
         print 'set'
-        if not self.initialized:
-            raise exceptions.SonarNotInitialized()
+        print self.initialized
+
+        # if not self.initialized:
+        #     self.open()
+            #raise exceptions.SonarNotInitialized()
+
+
 
         self.__set_parameters(
             agc=agc, prf_alt=prf_alt, scanright=scanright,
@@ -553,6 +598,10 @@ class TritechProfiler(object):
 
         port_enabled = kwargs.get('port_enabled')
         self.port_enabled = port_enabled
+        self.conn.port_enabled = port_enabled
+        print ('cambiando port enabled', port_enabled, self.port_enabled)
+
+
         # if port_enabled:
         #     self.port_enabled = True
         #
@@ -764,14 +813,17 @@ class TritechProfiler(object):
         for chunk in bitstream:
             payload.append(chunk)
 
-        if port_enabled:
+        if port_enabled :
             self.conn.conn.port = self.port
             self.conn.conn.baudrate = self.baudrate
             self.conn.open()
             self.send(Message.HEAD_COMMAND, payload)
             rospy.logwarn("Parameters are sent")
-        else:
+        elif not port_enabled and self.initialized:
             self.conn.close()
+
+        # while not self.port_enabled:
+        #     pass
         return hd_ctrl,hd_type,TxN_ch1,TxN_ch2,RxN_ch1,RxN_ch2,TxPulseLen,tx_rx,
         range_scale, left_limit,right_limit,adc_threshold,filt_gain,
         AGC_args,slope,mo_time,step,ScanTime,lockout,minor_axis,
@@ -972,6 +1024,7 @@ class TritechProfiler(object):
         :raises SonarNotConfigured: Sonar is not configured for scanning.
         """
         print 'scan'
+
         # Verify sonar is ready to scan.
         self.update()
         if self.no_params or not self.has_cfg:
@@ -984,55 +1037,58 @@ class TritechProfiler(object):
 
         # Scan until stopped.
         self.preempted = False
-        while not self.preempted:
+        while not self.preempted :
             # Preempt on ROS shutdown.
             if rospy.is_shutdown():
                 self.preempt()
                 return
 
-            # Ping the sonar.
-            self._ping()
 
-            # Get the scan data.
-            try:
-                data = self.get(Message.HEAD_DATA, wait=1).payload
-                timeout_count = 0
-            except exceptions.TimeoutError:
-                timeout_count += 1
-                rospy.logdebug("Timeout count: %d", timeout_count)
-                if timeout_count >= MAX_TIMEOUT_COUNT:
-                    # Try to resend parameters.
-                    self.set(force=True)
+            if self.port_enabled:
+                # Ping the sonar.
+                self._ping()
+
+                # Get the scan data.
+                try:
+                    data = self.get(Message.HEAD_DATA, wait=1).payload
                     timeout_count = 0
-                # Try again.
-                continue
+                except exceptions.TimeoutError:
+                    timeout_count += 1
+                    rospy.logdebug("Timeout count: %d", timeout_count)
+                    if timeout_count >= MAX_TIMEOUT_COUNT:
+                        # Try to resend parameters.
+                        self.set(force=True)
+                        timeout_count = 0
+                    # Try again.
+                    continue
 
-            try:
-                bins = self.__parse_head_data(data)
-            except ValueError as e:
-                # Try again.
-                rospy.logerr("Failed to parse head data: %r", e)
-                continue
+                try:
+                    bins = self.__parse_head_data(data)
+                except ValueError as e:
+                    # Try again.
+                    rospy.logerr("Failed to parse head data: %r", e)
+                    continue
 
-            # Generate configuration.
-            config = {
-                key: self.__getattribute__(key)
-                for key in (
-                    "inverted", "prf_alt", "scanright",
-                    "prf_AGC", "gain", "filt_gain", "adc_threshold",
-                    "left_limit", "right_limit",
-                    "range", "nbins", "step", "lockout"
-                )
-            }
+                # Generate configuration.
+                config = {
+                    key: self.__getattribute__(key)
+                    for key in (
+                        "inverted", "prf_alt", "scanright",
+                        "prf_AGC", "gain", "filt_gain", "adc_threshold",
+                        "left_limit", "right_limit",
+                        "range", "nbins", "step", "lockout"
+                    )
+                }
 
-            # Run callback.
-            slice = ScanSlice(self.heading, bins, config)
-            callback(self, slice)
+                # Run callback.
+                slice = ScanSlice(self.heading, bins, config)
+                callback(self, slice)
 
     def preempt(self):
         """
         Preempts a scan in progress.
         """
+        print 'preempt'
         rospy.logwarn("Preempting scan...")
         self.preempted = True
 
@@ -1042,6 +1098,7 @@ class TritechProfiler(object):
 
         :raises SonarNotInitialized: Sonar is not initialized.
         """
+        print 'reboot'
         rospy.logwarn("Rebooting sonar...")
         self.send(Message.REBOOT)
         self.open()
