@@ -81,10 +81,13 @@ class Socket(object):
             # Read one line at a time until packet is complete and parsed.
             packet = bitstring.BitStream("0x40")
             while self.port_enabled:
-                # Read until new line.
-                current_line = self.conn.readline()
-                for char in current_line:
-                    packet.append("0x{:02X}".format(ord(char)))
+		try:
+		    # Read until new line.
+		    current_line = self.conn.readline()
+		    for char in current_line:
+		        packet.append("0x{:02X}".format(ord(char)))
+		except:
+		    rospy.logwarn('trying to read socket with port enabled = %s',self.port_enabled)
 
                 # Try to parse.
                 try:
